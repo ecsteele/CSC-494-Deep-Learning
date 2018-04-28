@@ -12,6 +12,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data.dataset import Dataset
+from torch.autograd import Variable
 
 import NkuMyaDevMaker as nmd
 
@@ -21,12 +22,12 @@ class Net(nn.Module):
         super(Net, self).__init__()
         # 1 input image channel, 6 output channels, 5x5 square convolution
         # kernel
-        self.conv1 = nn.Conv2d(1, 6, kernel_size = 5)
-        self.conv2 = nn.Conv2d(6, 16, kernel_size = 5)
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=8, kernel_size=5)
+        self.conv2 = nn.Conv2d(in_channels=8, out_channels=10, kernel_size=5)
         # an affine operation: y = Wx + b
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc1 = nn.Linear(6 * 6 * 10, 120)
         self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        self.fc3 = nn.Linear(84, 1)
 
     def forward(self, x):
         # Max pooling over a (2, 2) window
@@ -64,9 +65,18 @@ class MyaDevDataset(Dataset):
         
         return item
     
+def accuracy(predictions, labels):
+    pred = predictions[:,0]
+    lab = labels[:,0]
+    correct = 0
+    for i in range(len(pred)):
+        if abs(pred[i].data[0] - lab[i]) < 0.33:
+            correct += 1
+    return correct
+    
 def main():
     n = 36
-    trset_size = 100
+    trset_size = 10000
     print('Generating training set...')
     X,Y = nmd.makeDataSet(n,trset_size, training=True)
     # For convolutional neural nets, we want 2d single plane images.
@@ -79,8 +89,11 @@ def main():
     
     train_set = MyaDevDataset(Xtrain,Ytrain)
     train_data = torch.utils.data.DataLoader(train_set, batch_size=100, shuffle=True)
+    #train_data = datasets.MNIST(root='./data/',train=True, transform=transforms.ToTensor(),download=True)
     
-    tsset_size = 100
+    #train_loader = torch.utils.data.DataLoader(dataset=train_data, batch_size=100, shuffle=True)
+    
+    tsset_size = 1000
     print('Generating test set...')
     X,Y = nmd.makeDataSet(n,tsset_size, training=False)
     # For convolutional neural nets, we want 2d single plane images.
@@ -94,6 +107,46 @@ def main():
     test_set = MyaDevDataset(Xtest,Ytest)
     test_data = torch.utils.data.DataLoader(test_set, batch_size=100, shuffle=True)
     
-    print(out)
+    cnn = Net()
+
+    # Hyper Parameters
+    num_epochs = 15
+    batch_size = 100
+    learning_rate = 0.001
+
+    # Loss and Optimizer
+    criterion = nn.L1Loss()
+    optimizer = torch.optim.Adam(cnn.parameters(), lr=learning_rate)
+
+    # Train the Model
+    for epoch in range(num_epochs):
+        for i, (images, labels) in enumerate(train_data):
+            images = images.transpose(1,3)
+            images = Variable(images)
+            labels = Variable(labels)
+        
+            # Forward + Backward + Optimize
+            optimizer.zero_grad()
+            outputs = cnn.forward(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+        
+            if (i+1) % 100 == 0:
+                print ('Epoch [%d/%d], Iter [%d/%d] Loss: %.4f' %(epoch+1, num_epochs, i+1, len(train_set)//batch_size, loss.data[0]))
+
+    # Test the Model
+    print("Test")
+    cnn.eval()  # Change model to 'eval' mode (BN uses moving mean/var).
+    correct = 0
+    total = 0
+    for images, labels in test_data:
+        images = images.transpose(1,3)
+        images = Variable(images)
+        outputs = cnn(images)
+        total += labels.size(0)
+        correct += accuracy(outputs,labels)
+
+    print('Test Accuracy of the model on the 100 test images: %d %%' % (100 * correct / total))
     
 main()
