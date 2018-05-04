@@ -1,9 +1,11 @@
-# Project_Steele_Virag_Tiemon_Gluon.py - Eric Steele, Mate Virag, Liam Tiemon
+# Project_Steele_Virag_Tiemon_Gluon_Reimplement.py - Eric Steele, Mate Virag, Liam Tiemon
 # NKU CSC/DSC 494/594 Deep Learning Spring 2018 K. Kirby
 # ---------------------------------------------------------------------
-# The Project_Steele_Virag_Tiemon_Gluon.py file creates and trains 
+# The Project_Steele_Virag_Tiemon_Gluon_Reimplement.py file creates and trains 
 # a neural network using the Gluon machine learning library to solve the 
-# Myanmar/Devanagari classification problem. This file requires 
+# Myanmar/Devanagari classification problem. The network used in
+# this implementation is a replica of the original TensorFlow network used
+# in the TfCnn-MyaDev_For_HW4.py file. This file requires 
 # NkuMyaDevMaker.py to generate the images.
 
 
@@ -84,7 +86,7 @@ def cnn():
     train_data = mx.gluon.data.DataLoader(ds, batch_size=100, shuffle=True)
     
     # Generate the test set, with nxn images
-    teset_size= 10000
+    teset_size= 1000
     print('Generating test set...')
     
     # Use NkuMyaDevMaker to generate images, then format
@@ -101,28 +103,20 @@ def cnn():
     # Initialize the network
     net = gluon.nn.Sequential()
     
-    # Declare hyperparameters
-    convo1_kernels = 20
-    convo1_kernel_size = (5,5)
-    convo2_kernels = 40
-    convo2_kernel_size = (5,5)
-    pooling = 2
-    
-    hidden1_neurons = 20
-    dropout_rate = 0.3
-    hidden2_neurons = 15
+    # Identify some key hyperparameters here for reference.
+    k = 5        # Kernels will be k x k 
+    nc= n-(k-1)  # Result of convolving nxn image (stride 1, valid) will be nc x nc
+    ps = 2       # ps x ps pooling (stride ps)
+    assert nc % ps == 0 # Pools should evenly divide images being pooled
+    nf = 7       # Will use nf kernel filters
+    nh = 11      # Will have nh neurons in the hidden layer
     
     # Define our network
     with net.name_scope():
-        net.add(gluon.nn.Conv2D(channels=convo1_kernels, kernel_size=convo1_kernel_size, use_bias=True, activation='relu'))
-        net.add(gluon.nn.MaxPool2D(pool_size=pooling, strides=pooling))
-        net.add(gluon.nn.BatchNorm())
-        net.add(gluon.nn.Conv2D(channels=convo2_kernels, kernel_size=convo2_kernel_size, use_bias=True, activation='relu'))
-        net.add(gluon.nn.MaxPool2D(pool_size=pooling, strides=pooling))
+        net.add(gluon.nn.Conv2D(channels=nf, kernel_size=k, use_bias=True, activation='relu'))
+        net.add(gluon.nn.MaxPool2D(pool_size=ps, strides=ps))
         net.add(gluon.nn.Flatten())
-        net.add(gluon.nn.Dense(hidden1_neurons, activation="relu", use_bias=True))
-        net.add(gluon.nn.Dropout(dropout_rate))
-        net.add(gluon.nn.Dense(hidden2_neurons, activation="relu", use_bias=True))
+        net.add(gluon.nn.Dense(nh, activation="relu", use_bias=True))
         net.add(gluon.nn.Dense(1, activation="sigmoid", use_bias=True)) # Output layer
 
     # Initialize parameters using normal distribution
@@ -131,11 +125,11 @@ def cnn():
     mean_squared_error = gluon.loss.L2Loss()
     
     # Declare our training algorithm.
-    trainer = gluon.Trainer(net.collect_params(), 'ADAM', {'learning_rate': .01})
+    trainer = gluon.Trainer(net.collect_params(), 'rmsprop', {'learning_rate': .01})
     
     # Begin training
     print('Training...')
-    max_epochs = 5
+    max_epochs = 4
     for e in range(max_epochs):
         correct = 0 # Count of correct results across epoch, for calculating accuracy
         
@@ -173,13 +167,6 @@ def cnn():
             display_image(img[0])
             print("expected: " + str(label) + "| actual: " + str(output))
     acc = count / teset_size
-    print("Test accuracy: {}%".format(acc*100))
+    print("Test accuracy: {}".format(acc))
 
 cnn()
-
-# Kirby's network:
-"""net.add(gluon.nn.Conv2D(channels=nf, kernel_size=k, use_bias=True, activation='relu'))
-        net.add(gluon.nn.MaxPool2D(pool_size=ps, strides=ps))
-        net.add(gluon.nn.Flatten())
-        net.add(gluon.nn.Dense(nh, activation="relu", use_bias=True))
-        net.add(gluon.nn.Dense(1, activation="sigmoid", use_bias=True)) # Output layer"""

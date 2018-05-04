@@ -1,9 +1,11 @@
-# Project_Steele_Virag_Tiemon_Pytorch.py - Eric Steele, Mate Virag, Liam Tiemon
+# Project_Steele_Virag_Tiemon_Pytorch_Reimplement.py - Eric Steele, Mate Virag, Liam Tiemon
 # NKU CSC/DSC 494/594 Deep Learning Spring 2018 K. Kirby
 # ---------------------------------------------------------------------
-# The Project_Steele_Virag_Tiemon_Pytorch.py file creates and trains a 
-# neural network using the PyTorch machine learning library to solve the
-# Myanmar/Devanagari classification problem. This file requires 
+# The Project_Steele_Virag_Tiemon_Pytorch_Reimplement.py file creates and 
+# trains a neural network using the PyTorch machine learning library to 
+# solve the Myanmar/Devanagari classification problem. The network used in
+# this implementation is a replica of the original TensorFlow network used
+# in the TfCnn-MyaDev_For_HW4.py file. This file requires 
 # NkuMyaDevMaker.py to generate the images.
 
 import numpy as np
@@ -26,15 +28,9 @@ def render_as_image(a):
     plt.imshow(img[:,:,0])
     plt.show()
 
-"""
-Class that defines the neural network being used. __init__ defines the layers
-in the neural netwrok, such as dense and convolutional layers. The forward function
-pushes he input patterns through the network using max pooling for convolution, it
-defines the activation function for every layer and returns the output of the network
-as x. The function num_flat_features calculates the size of the flat array for the input
-of the first dense layer after the last pooling convolutional layer.
-"""
+"""Class that defines the neural network."""
 class Net(nn.Module):
+    """Defines the layers in the neural network."""
     def __init__(self, depth, nk, kernel_size, padding, hidden_neurons, nc):
         super(Net, self).__init__()
         # out_channels defines the number of kernels
@@ -44,6 +40,10 @@ class Net(nn.Module):
         # Single value output
         self.fc2 = nn.Linear(hidden_neurons, 1)
 
+    """
+    Defines the connections and the activation functions between layers, pushes the 
+    input patterns through the network and returns the network's output.
+    """
     def forward(self, x, pooling):
         # Max pooling over a square window with stride of pool size to avoid overlaps
         # Activatin functions are specified in this function even for the convolutional layer
@@ -53,6 +53,10 @@ class Net(nn.Module):
         x = F.sigmoid(self.fc2(x))
         return x
 
+    """
+    Calculates the size of the flat array for the input of the first dense layer 
+    after the last convolutional layer.
+    """
     def num_flat_features(self, x):
         size = x.size()[1:]  # All dimensions except the batch dimension
         num_features = 1
@@ -99,6 +103,7 @@ def accuracy(predictions, labels):
             correct += 1
     return correct
     
+"""Defines the network, generates the training and test sets, and trains and tests the network."""
 def main():
     # Format options for numpy
     np.set_printoptions(precision=3, suppress=True, floatmode='fixed')
