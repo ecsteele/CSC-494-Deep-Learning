@@ -84,7 +84,7 @@ def cnn():
     train_data = mx.gluon.data.DataLoader(ds, batch_size=100, shuffle=True)
     
     # Generate the test set, with nxn images
-    teset_size= 1000
+    teset_size= 10000
     print('Generating test set...')
     
     # Use NkuMyaDevMaker to generate images, then format
@@ -173,7 +173,7 @@ def cnn():
             display_image(img[0])
             print("expected: " + str(label) + "| actual: " + str(output))
     acc = count / teset_size
-    print("Test accuracy: {}".format(acc))
+    print("Test accuracy: {}%".format(acc*100))
 
 cnn()
 
