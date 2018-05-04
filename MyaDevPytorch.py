@@ -81,7 +81,7 @@ def main():
     X,Y = nmd.makeDataSet(n,trset_size, training=True)
     # For convolutional neural nets, we want 2d single plane images.
     Xtrain = np.array(X).reshape([-1,n,n,1])
-    # HW4 expects a single output, not 2 output with 1-hot!
+    # Make it a single output, not 2 output with 1-hot!
     Ytrain= np.array([ [ y] for y in Y ], dtype=np.float32 )
     ds = []
     for i in range(trset_size):
@@ -89,9 +89,6 @@ def main():
     
     train_set = MyaDevDataset(Xtrain,Ytrain)
     train_data = torch.utils.data.DataLoader(train_set, batch_size=100, shuffle=True)
-    #train_data = datasets.MNIST(root='./data/',train=True, transform=transforms.ToTensor(),download=True)
-    
-    #train_loader = torch.utils.data.DataLoader(dataset=train_data, batch_size=100, shuffle=True)
     
     tsset_size = 1000
     print('Generating test set...')
@@ -111,7 +108,6 @@ def main():
 
     # Hyper Parameters
     num_epochs = 15
-    batch_size = 100
     learning_rate = 0.001
 
     # Loss and Optimizer
@@ -133,7 +129,7 @@ def main():
             optimizer.step()
         
             if (i+1) % 100 == 0:
-                print ('Epoch [%d/%d], Iter [%d/%d] Loss: %.4f' %(epoch+1, num_epochs, i+1, len(train_set)//batch_size, loss.data[0]))
+                print ('Epoch [%d/%d]: Loss: %.4f' %(epoch+1, num_epochs, loss.data[0]))
 
     # Test the Model
     print("Test")
